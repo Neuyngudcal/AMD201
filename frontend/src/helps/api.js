@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://visit-integrated-billion-disturbed.trycloudflare.com';
+const API_BASE_URL = 'http://localhost:5080/polls';
 
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
@@ -10,7 +10,10 @@ const apiClient = axios.create({
 });
 
 apiClient.interceptors.response.use(
-    (response) => response.data,
+    (response) => {
+        if (response.status === 204) return true;
+        return response.data;
+    },
     (error) => {
         if (error.response) {
             console.error('API Error:', {
@@ -25,11 +28,11 @@ apiClient.interceptors.response.use(
     }
 );
 
-export const viewAllPolls = () => apiClient.get('/');
+export const viewAllPolls = () => apiClient.get('');
 
 export const viewPollByCode = (pollCode) => apiClient.get(`/${pollCode}`);
 
-export const addNewPoll = (pollData) => apiClient.post('/', pollData);
+export const addNewPoll = (pollData) => apiClient.post('', pollData);
 
 export const editPollByCode = (pollCode, pollData) => apiClient.put(`/${pollCode}`, pollData);
 

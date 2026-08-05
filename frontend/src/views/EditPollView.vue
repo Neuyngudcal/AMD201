@@ -8,16 +8,6 @@
         </span>
       </button>
       <nav class="flex items-center space-x-4">
-        <button 
-          v-if="isLoaded && currentPollCode"
-          @click="router.push(`/poll/${currentPollCode}`)" 
-          class="inline-flex items-center text-sm font-bold text-amber-600 hover:text-amber-700 transition-colors bg-amber-50 px-4 py-2 rounded-full"
-        >
-        <span>Live Results</span>
-          <svg class="w-3.5 h-3.5 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-        </button>
       </nav>
     </header>
 
@@ -54,14 +44,6 @@
         <div class="h-2 w-full bg-gradient-to-r from-amber-400 to-amber-500"></div>
 
         <div class="p-6 sm:p-10 space-y-8">
-          <!-- Poll Info Badge -->
-          <div class="flex items-center justify-between bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 text-sm">
-            <span class="text-gray-600 font-medium">Editing Poll: <strong class="text-black font-mono">#{{ currentPollCode }}</strong></span>
-            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-green-100 text-green-800">
-              Active
-            </span>
-          </div>
-
           <!-- Question Input Section -->
           <div class="space-y-3">
             <label class="block text-sm font-bold text-gray-700">
@@ -284,7 +266,7 @@ const handleUpdatePoll = async () => {
     const res = await editPollByCode(currentPollCode.value, { creatorToken, question, options });
     if (res) {
       toast.success('Poll updated successfully!');
-      router.push(`/poll/${currentPollCode.value}`);
+      router.push(`/results/${currentPollCode.value}`);
     } else toast.error('An error occurred while updating the poll.');
   } catch (error) {
     toast.error('Unable to connect to the server.');

@@ -46,7 +46,7 @@
             <label class="block text-sm font-bold text-gray-700">
               Answer Options <span class="text-gray-400 font-normal">({{ pollForm.options.length }}/6 max)</span>
             </label>
-            <span class="text-xs font-semibold text-gray-400">At least 2 required</span>
+            <span class="text-xs font-semibold text-gray-400">At least 2 required, Options must be unique.</span>
           </div>
 
           <!-- Options List -->
