@@ -224,9 +224,29 @@ const fetchPollData = async () => {
     currentPollCode.value = code;
     pollForm.value.question = data.question;
     
-    const options = (data.options || []).map(opt => typeof opt === 'string' ? opt : (opt?.text || ''));
-    pollForm.value.options = [...options, '', ''].slice(0, Math.max(2, options.length));
+    // Code cũ: dùng các hàm nâng cao (map, spread, slice) hơi khó hiểu
+    // Code mới: Viết tường minh bằng vòng lặp for dễ hiểu cho người mới học
+    const apiOptions = data.options || [];
+    const mappedOptions = [];
+    
+    // 1. Duyệt qua mảng API trả về và lấy text
+    for (let i = 0; i < apiOptions.length; i++) {
+      let opt = apiOptions[i];
+      if (typeof opt === 'string') {
+        mappedOptions.push(opt);
+      } else {
+        mappedOptions.push(opt.text || '');
+      }
+    }
 
+    // 2. Đảm bảo UI luôn hiển thị ít nhất 2 ô nhập liệu
+    if (mappedOptions.length === 0) {
+      mappedOptions.push('', ''); // Thêm 2 ô trống
+    } else if (mappedOptions.length === 1) {
+      mappedOptions.push('');     // Thêm 1 ô trống nữa
+    }
+
+    pollForm.value.options = mappedOptions;
     isLoaded.value = true;
     toast.success(`Poll #${code} loaded successfully!`);
   } catch (error) {
@@ -253,10 +273,22 @@ const removeOption = (index) => {
 const handleUpdatePoll = async () => {
   toast.dismiss();
   const question = pollForm.value.question.trim();
-  const options = pollForm.value.options.map(opt => opt.trim());
+  const options = [];
+  for (let i = 0; i < pollForm.value.options.length; i++) {
+    options.push(pollForm.value.options[i].trim());
+  }
 
   if (!question) return toast.error('Please enter a question for your poll!');
-  if (options.some(opt => !opt)) return toast.error('Options cannot be empty!');
+  
+  // Kiểm tra xem có option nào bị trống không
+  let hasEmptyOption = false;
+  for (let i = 0; i < options.length; i++) {
+    if (options[i] === '') {
+      hasEmptyOption = true;
+      break;
+    }
+  }
+  if (hasEmptyOption) return toast.error('Options cannot be empty!');
 
   const creatorToken = localStorage.getItem(`poll_token_${currentPollCode.value}`);
   if (!creatorToken) return toast.error('You do not have permission to edit this poll.');

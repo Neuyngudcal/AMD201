@@ -67,13 +67,13 @@
         
         <!-- Poll Grid -->
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div v-for="poll in polls" :key="poll.pollCode" class="bg-white rounded-3xl border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col justify-between overflow-hidden">
+          <div v-for="poll in polls" :key="poll.code" class="bg-white rounded-3xl border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col justify-between overflow-hidden">
             <div class="p-6 sm:p-8">
               <div class="flex justify-between items-start mb-4">
                 <span class="px-3 py-1 text-xs font-bold font-mono rounded-full" :class="poll.isClosed ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'">
                   {{ poll.isClosed ? 'Closed' : 'Active' }}
                 </span>
-                <span class="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-1 rounded">#{{ poll.pollCode }}</span>
+                <span class="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-1 rounded">#{{ poll.code }}</span>
               </div>
               <h3 class="text-xl font-bold text-black mb-3 line-clamp-2 leading-tight group-hover:text-amber-500 transition-colors">
                 {{ poll.question }}
@@ -82,10 +82,10 @@
             </div>
             
             <div class="border-t border-gray-100 bg-gray-50/50 p-6 flex items-center gap-3">
-              <router-link :to="`/detail/${poll.pollCode}`" class="flex-1 py-3 bg-black hover:bg-gray-800 text-white font-bold text-sm text-center rounded-xl transition-colors">
+              <router-link :to="`/detail/${poll.code}`" class="flex-1 py-3 bg-black hover:bg-gray-800 text-white font-bold text-sm text-center rounded-xl transition-colors">
                 View Details
               </router-link>
-              <router-link :to="`/poll/${poll.pollCode}`" class="flex-1 py-3 bg-amber-400 hover:bg-amber-500 text-black font-bold text-sm text-center rounded-xl transition-colors" v-if="!poll.isClosed">
+              <router-link :to="`/poll/${poll.code}`" class="flex-1 py-3 bg-amber-400 hover:bg-amber-500 text-black font-bold text-sm text-center rounded-xl transition-colors" v-if="!poll.isClosed">
                 Vote Now
               </router-link>
             </div>

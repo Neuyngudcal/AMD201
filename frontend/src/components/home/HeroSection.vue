@@ -39,12 +39,11 @@
             </svg>
           </router-link>
 
-          <a 
-            href="#features" 
-            class="w-full sm:w-auto px-8 py-4 bg-white/10 hover:bg-white/15 text-white border border-white/20 rounded-full font-bold text-base transition-all duration-300 backdrop-blur-sm flex items-center justify-center"
-          >
-            Explore Features
-          </a>
+          <router-link 
+            to="/lists"
+            class="w-full sm:w-auto px-8 py-4 bg-white/10 hover:bg-white/15 text-white border border-white/20 rounded-full font-bold text-base transition-all duration-300 backdrop-blur-sm flex items-center justify-center">
+              Poll Details
+          </router-link>
         </div>
 
         <!-- Trust Badges -->

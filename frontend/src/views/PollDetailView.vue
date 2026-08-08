@@ -55,7 +55,7 @@
             Back to List
           </router-link>
           <span>/</span>
-          <span class="text-black truncate max-w-[200px]">Poll #{{ poll.pollCode }}</span>
+          <span class="text-black truncate max-w-[200px]">Poll #{{ poll.code }}</span>
         </div>
 
         <!-- Detail Card -->

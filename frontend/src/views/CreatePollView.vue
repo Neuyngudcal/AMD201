@@ -33,6 +33,7 @@
       <!-- Main Form Card -->
       <div class="bg-white rounded-[2rem] shadow-xl border border-gray-200/80 p-6 sm:p-10 space-y-8">
         
+        <!-- Poll Question Input -->
         <BaseInput 
           v-model="pollForm.question"
           label="Poll Question"
@@ -51,15 +52,19 @@
 
           <!-- Options List -->
           <div class="space-y-3">
+            <!-- Option Item -->
             <div 
               v-for="(option, index) in pollForm.options" 
               :key="index"
               class="flex items-center space-x-3 group"
             >
+
+            <!-- Option Number Badge -->
               <div class="w-10 h-12 bg-black text-white font-mono rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0 shadow-sm">
                 {{ index + 1 }}
               </div>
 
+              <!-- Option Input -->
               <div class="relative flex-1">
                 <input 
                   v-model="pollForm.options[index]" 
@@ -70,6 +75,7 @@
                 />
               </div>
 
+              <!-- Remove Option Button -->
               <button 
                 @click="removeOption(index)" 
                 type="button"
@@ -97,7 +103,7 @@
               </svg>
               <span>Add Another Option</span>
             </button>
-            
+            <!-- Max Options Reached Message -->
             <p v-else class="text-center text-xs text-amber-700 font-semibold py-2.5 bg-amber-50 rounded-xl border border-amber-200">
               You have reached the maximum limit of 6 answer options.
             </p>
@@ -106,10 +112,12 @@
 
         <!-- Submit Button Section -->
         <div class="pt-8 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-end gap-4">
+          <!-- Cancel Button -->
           <BaseButton variant="secondary" @click="router.push('/')">
             Cancel
           </BaseButton>
 
+          <!-- Submit Button -->
           <BaseButton 
             :disabled="isSubmitting"
             @click="handleCreatePoll"
@@ -163,7 +171,15 @@ const handleCreatePoll = async () => {
   toast.dismiss();
 
   const questionText = pollForm.value.question.trim();
-  const validOptions = pollForm.value.options.map(opt => opt.trim()).filter(Boolean);
+  // Lọc ra các câu trả lời hợp lệ (bỏ qua khoảng trắng và ô trống)
+  // Viết tường minh thay vì dùng hàm filter(Boolean) khó hiểu
+  const validOptions = [];
+  for (let i = 0; i < pollForm.value.options.length; i++) {
+    const opt = pollForm.value.options[i].trim();
+    if (opt !== '') {
+      validOptions.push(opt);
+    }
+  }
 
   if (!questionText) return toast.error('Please enter a question for your poll!');
   if (validOptions.length < 2) return toast.error('Please provide at least 2 valid options (cannot be empty)!');

@@ -96,7 +96,7 @@
                 <span :class="isAutoRefresh ? 'bg-green-500' : 'bg-gray-400'" class="relative inline-flex rounded-full h-2.5 w-2.5"></span>
               </span>
               <span class="text-xs font-semibold text-gray-600">
-                {{ isAutoRefresh ? 'Live (5s)' : 'Paused' }}
+                {{ isAutoRefresh ? 'Live (WebSocket)' : 'Paused' }}
               </span>
               <button 
                 @click="toggleAutoRefresh" 
@@ -225,8 +225,9 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { getPollResults, viewPollByCode } from '../helps/api';
+import { getPollResults, viewPollByCode, HUB_BASE_URL } from '../helps/api';
 import { toast } from 'vue-sonner';
+import * as signalR from '@microsoft/signalr';
 
 const router = useRouter();
 const route = useRoute();
@@ -237,30 +238,51 @@ const isLoading = ref(false);
 const isLoaded = ref(false);
 const isRefreshing = ref(false);
 const isAutoRefresh = ref(true);
-let refreshTimer = null;
+let hubConnection = null;
 
 const pollData = ref({ question: '', options: [] });
 
-const totalVotes = computed(() => pollData.value.options.reduce((sum, opt) => sum + (opt.votes || 0), 0));
+// Tính tổng số phiếu bầu (Viết tường minh thay vì dùng hàm reduce phức tạp)
+const totalVotes = computed(() => {
+  let sum = 0;
+  for (let i = 0; i < pollData.value.options.length; i++) {
+    sum += (pollData.value.options[i].votes || 0);
+  }
+  return sum;
+});
 
+// Tìm ra câu trả lời có nhiều phiếu nhất (Viết tường minh thay vì dùng hàm sort)
 const leadingOption = computed(() => {
-  if (!pollData.value.options.length || totalVotes.value === 0) return null;
-  return [...pollData.value.options].sort((a, b) => b.votes - a.votes)[0];
+  if (pollData.value.options.length === 0 || totalVotes.value === 0) {
+    return null;
+  }
+  
+  let winner = pollData.value.options[0];
+  for (let i = 1; i < pollData.value.options.length; i++) {
+    if (pollData.value.options[i].votes > winner.votes) {
+      winner = pollData.value.options[i];
+    }
+  }
+  return winner;
 });
 
 const processedOptions = computed(() => {
   const total = totalVotes.value;
   const maxVotes = leadingOption.value?.votes || 0;
-
-  return pollData.value.options.map(opt => {
+  
+  const results = [];
+  for (let i = 0; i < pollData.value.options.length; i++) {
+    const opt = pollData.value.options[i];
     const votes = opt.votes || 0;
-    return {
-      ...opt,
-      votes,
+    results.push({
+      id: opt.id,
+      text: opt.text,
+      votes: votes,
       percentage: total > 0 ? Math.round((votes / total) * 100) : 0,
       isWinner: total > 0 && votes === maxVotes && votes > 0
-    };
-  });
+    });
+  }
+  return results;
 });
 
 onMounted(() => {
@@ -271,7 +293,7 @@ onMounted(() => {
   }
 });
 
-onUnmounted(() => stopAutoRefresh());
+onUnmounted(() => stopSignalR());
 
 const fetchResults = async () => {
   const code = inputPollCode.value.trim().replace(/^#/, '');
@@ -285,7 +307,7 @@ const fetchResults = async () => {
     await loadResultsData(code);
     currentPollCode.value = code;
     isLoaded.value = true;
-    startAutoRefresh();
+    startSignalR(code);
     toast.success(`Results for #${code} loaded successfully!`);
   } catch (error) {
     toast.error('No poll results found with this code. Please check again.');
@@ -303,13 +325,19 @@ const loadResultsData = async (code) => {
   }
 
   const rawOpts = data.options || data.results || [];
+  const mappedOptions = [];
+  for (let i = 0; i < rawOpts.length; i++) {
+    const opt = rawOpts[i];
+    mappedOptions.push({
+      id: opt.id !== undefined && opt.id !== null ? opt.id : i,
+      text: opt.text !== undefined && opt.text !== null ? opt.text : opt,
+      votes: parseInt(opt.votes !== undefined && opt.votes !== null ? opt.votes : 0, 10)
+    });
+  }
+  
   pollData.value = {
     question: data.question || `Poll #${code}`,
-    options: rawOpts.map((opt, idx) => ({
-      id: opt.id ?? idx,
-      text: opt.text ?? opt,
-      votes: parseInt(opt.votes ?? 0, 10)
-    }))
+    options: mappedOptions
   };
 };
 
@@ -323,26 +351,43 @@ const silentRefresh = async () => {
   }
 };
 
-const startAutoRefresh = () => {
-  stopAutoRefresh();
-  if (isAutoRefresh.value) refreshTimer = setInterval(silentRefresh, 5000);
+const startSignalR = async (code) => {
+  stopSignalR();
+  
+  hubConnection = new signalR.HubConnectionBuilder()
+    .withUrl(HUB_BASE_URL)
+    .withAutomaticReconnect()
+    .build();
+
+  hubConnection.on("ResultsUpdated", () => {
+    if (isAutoRefresh.value) {
+      silentRefresh();
+    }
+  });
+
+  try {
+    await hubConnection.start();
+    await hubConnection.invoke("WatchPoll", code);
+  } catch (err) {
+    console.error("SignalR Connection Error: ", err);
+  }
 };
 
-const stopAutoRefresh = () => {
-  if (refreshTimer) {
-    clearInterval(refreshTimer);
-    refreshTimer = null;
+const stopSignalR = async () => {
+  if (hubConnection) {
+    try {
+      await hubConnection.stop();
+    } catch (err) {}
+    hubConnection = null;
   }
 };
 
 const toggleAutoRefresh = () => {
   isAutoRefresh.value = !isAutoRefresh.value;
   if (isAutoRefresh.value) {
-    startAutoRefresh();
-    toast.success('Real-time auto-refresh resumed (5s)');
+    toast.success('Real-time WebSocket updates resumed');
   } else {
-    stopAutoRefresh();
-    toast.info('Auto-refresh paused.');
+    toast.info('Real-time updates paused.');
   }
 };
 
